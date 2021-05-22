@@ -1,71 +1,70 @@
 let myMap;
 let coords;
-let  objectManager;
 
 // Дождёмся загрузки API и готовности DOM.
-ymaps.ready(init);
+ymaps.ready(init)
 
-
-function init(){
+function init() {
     myMap = new ymaps.Map('map', {
         // При инициализации карты обязательно нужно указать
         // её центр и коэффициент масштабирования.
         center: [55.76, 37.64], // Москва
-        zoom: 8,
-    });
-
-     objectManager = new ymaps.ObjectManager({
-        // Чтобы метки начали кластеризоваться, выставляем опцию.
-        clusterize: true,
-        // ObjectManager принимает те же опции, что и кластеризатор.
-        gridSize: 32,
-        clusterDisableClickZoom: true
-    });
-
-    myPlacemark = new ymaps.Placemark(myMap.getCenter(), {
-        hintContent: 'Собственный значок метки',
-        balloonContent: 'Это красивая метка'
+        zoom: 10,
     }, {
-        iconLayout: 'default#image',
-        // Своё изображение иконки метки.
-        iconImageHref: 'img/pin.jpg',
-        // Размеры метки.
-        iconImageSize: [30, 42],
+        searchControlProvider: 'yandex#search'
     });
 
-    let myPlacemark1 = new ymaps.Placemark([56.76, 37.64], {
-        hintContent: 'Собственный значок метки',
-        balloonContent: 'Это красивая метка'
-    }, {
-        iconLayout: 'default#image',
-        // Своё изображение иконки метки.
-        iconImageHref: 'img/pin.jpg',
-        // Размеры метки.
-        iconImageSize: [30, 42],
-    })
+    var clusterer = new ymaps.Clusterer({
+        clusterDisableClickZoom: true,
+        clusterOpenBalloonOnClick: true,
+        // Устанавливаем стандартный макет балуна кластера "Карусель".
+        clusterBalloonContentLayout: 'cluster#balloonCarousel',
+        // Устанавливаем собственный макет.
+        clusterBalloonItemContentLayout: customItemContentLayout,
+        // Устанавливаем режим открытия балуна.
+        // В данном примере балун никогда не будет открываться в режиме панели.
+        clusterBalloonPanelMaxMapArea: 0,
+        // Устанавливаем размеры макета контента балуна (в пикселях).
+        clusterBalloonContentLayoutWidth: 200,
+        clusterBalloonContentLayoutHeight: 130,
+        // Устанавливаем максимальное количество элементов в нижней панели на одной странице
+        clusterBalloonPagerSize: 5
+        // Настройка внешнего вида нижней панели.
+        // Режим marker рекомендуется использовать с небольшим количеством элементов.
+        // clusterBalloonPagerType: 'marker',
+        // Можно отключить зацикливание списка при навигации при помощи боковых стрелок.
+        // clusterBalloonCycling: false,
+        // Можно отключить отображение меню навигации.
+        // clusterBalloonPagerVisible: false
+    });
 
-    myMap.geoObjects.add(myPlacemark);
-    myMap.geoObjects.add(myPlacemark1);
-    myMap.geoObjects.add(objectManager);
+    map.geoObjects.add(clusterer);
 
-    addListeneres()
+
+
+    addListeners();
 }
 
 
-function addListeneres(){
-    myMap.events.add('click', function (event){
+function validateForm() {
+    return true;
+}
+
+function addListeners() {
+    objectManager.objects.events.add(['mouseenter', 'mouseleave', 'click'], onObjectEvent);
+    objectManager.clusters.events.add(['mouseenter', 'mouseleave', 'click'], onClusterEvent);
+
+    myMap.events.add('click', function (event) {
         openModal(event);
     });
 
-    objectManager.objects.events.add(['mouseenter', 'mouseleave'], onObjectEvent);
-    objectManager.clusters.events.add(['mouseenter', 'mouseleave'], onClusterEvent);
-
-
-    const btn = document.getElementById('send');
-
-    btn.addEventListener('click', function(event){
+    const form = document.getElementById('sendForm');
+    form.addEventListener('submit', (event) => {
         event.preventDefault();
-        validateForm();
+        if (!validateForm()) {
+            return;
+        }
+
         myPlacemark = new ymaps.Placemark(coords, {
             hintContent: 'Собственный значок метки',
             balloonContent: 'Это красивая метка'
@@ -76,26 +75,35 @@ function addListeneres(){
             // Размеры метки.
             iconImageSize: [30, 42],
         });
+
         myMap.geoObjects.add(myPlacemark);
         objectManager.add(myPlacemark);
 
+
         const modal = document.getElementById('modal');
         modal.style.display = 'none';
-    });
+    })
+
+
 }
 
 
-function validateForm(){
-    const comment = document.getElementById('')
+function onObjectEvent(){
+    console.log('Object');
+
 }
 
-function openModal(event){
+function onClusterEvent(){
+    console.log('Cluster');
+}
+
+
+function openModal(event) {
     let posX = event.getSourceEvent().originalEvent.domEvent.originalEvent.clientX;
     let posY = event.getSourceEvent().originalEvent.domEvent.originalEvent.clientY;
     coords = event.get('coords');
+    getClickCoords(coords);
 
-    const adr = getClickCoords(coords);
-    console.log(adr);
 
     const modal = document.getElementById('modal');
     modal.style.display = 'block';
@@ -111,11 +119,74 @@ function getClickCoords(coords) {
     })
 }
 
-function onObjectEvent(){
 
-}
+// function init(){
+//     myMap = new ymaps.Map('map', {
+//         // При инициализации карты обязательно нужно указать
+//         // её центр и коэффициент масштабирования.
+//         center: [55.76, 37.64], // Москва
+//         zoom: 8,
+//     });
+//
+//
+//
+//
+//     myMap.geoObjects.add(myPlacemark);
+//     myMap.geoObjects.add(myPlacemark1);
+//     myMap.geoObjects.add(objectManager);
+//
+//     addListeneres()
+// }
+//
+//
+// function addListeneres(){
+//
+//     objectManager.objects.events.add(['mouseenter', 'mouseleave'], onObjectEvent);
+//     objectManager.clusters.events.add(['mouseenter', 'mouseleave'], onClusterEvent);
+//
+//
+//     const btn = document.getElementById('send');
+//
+//     btn.addEventListener('click', function(event){
+//         event.preventDefault();
+//         validateForm();
+//         myPlacemark = new ymaps.Placemark(coords, {
+//             hintContent: 'Собственный значок метки',
+//             balloonContent: 'Это красивая метка'
+//         }, {
+//             iconLayout: 'default#image',
+//             // Своё изображение иконки метки.
+//             iconImageHref: 'img/pin.jpg',
+//             // Размеры метки.
+//             iconImageSize: [30, 42],
+//         });
+//         myMap.geoObjects.add(myPlacemark);
+//         objectManager.add(myPlacemark);
+//
+//         const modal = document.getElementById('modal');
+//         modal.style.display = 'none';
+//     });
+// }
+//
+//
+// function validateForm(){
+//     const comment = document.getElementById('')
+// }
+//
+// function openModal(event){
+//
+//     const adr = getClickCoords(coords);
+//     console.log(adr);
+//
+// }
+//
 
-
-function onClusterEvent(){
-
-}
+//
+// function onObjectEvent(){
+//
+// }
+//
+//
+// function onClusterEvent(){
+//
+// }
